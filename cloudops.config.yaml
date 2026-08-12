@@ -1,0 +1,38 @@
+logLevel: info
+
+routing:
+  default:
+    provider: openai
+    model: gpt-4o-mini
+  coding:
+    provider: anthropic
+    model: claude-sonnet-4-20250514
+  research:
+    provider: perplexity
+    model: sonar
+  planning:
+    provider: openai
+  verification:
+    provider: openai
+  fallback:
+    provider: gemini
+    model: gemini-2.0-flash
+
+tools:
+  shell: true
+  aws: true
+  cloudflare: true
+  vercel: true
+  github: true
+
+security:
+  mode: standard
+  confirmDestructive: true
+  confirmWrite: false
+  blockedCommands: []
+
+agent:
+  maxIterations: 20
+  maxToolCallsPerIteration: 5
+
+fallbackEnabled: true
