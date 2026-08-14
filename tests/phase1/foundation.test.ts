@@ -17,7 +17,7 @@ describe('Configuration', () => {
   it('loads default configuration', () => {
     const config = loadConfig();
     expect(config.logLevel).toBe('info');
-    expect(config.routing.default.provider).toBe('openai');
+    expect(config.routing.default.provider).toBe('groq');
     expect(config.fallbackEnabled).toBe(true);
   });
 
@@ -26,6 +26,34 @@ describe('Configuration', () => {
     const config = loadConfig();
     expect(config.providers.openai?.apiKey).toBe('sk-test-key-for-unit-tests-only');
     expect(getConfiguredProviders(config)).toContain('openai');
+  });
+
+  it('reads the Grok API key and optional model from environment', () => {
+    process.env['XAI_API_KEY'] = 'xai-test-key-for-unit-tests-only';
+    process.env['XAI_DEFAULT_MODEL'] = 'grok-4.5';
+
+    const config = loadConfig();
+
+    expect(config.providers.xai).toMatchObject({
+      apiKey: 'xai-test-key-for-unit-tests-only',
+      baseUrl: 'https://api.x.ai/v1',
+      defaultModel: 'grok-4.5',
+    });
+    expect(getConfiguredProviders(config)).toContain('xai');
+  });
+
+  it('reads the Groq API key and optional model from environment', () => {
+    process.env['GROQ_API_KEY'] = 'gsk-test-key-for-unit-tests-only';
+    process.env['GROQ_DEFAULT_MODEL'] = 'openai/gpt-oss-20b';
+
+    const config = loadConfig();
+
+    expect(config.providers.groq).toMatchObject({
+      apiKey: 'gsk-test-key-for-unit-tests-only',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      defaultModel: 'openai/gpt-oss-20b',
+    });
+    expect(getConfiguredProviders(config)).toContain('groq');
   });
 
   it('respects verbose override for log level', () => {

@@ -3,7 +3,9 @@ import { createAIProviderRegistry } from './AIProviderRegistry.js';
 import { openAIFactory } from './providers/OpenAIProvider.js';
 import { anthropicFactory } from './providers/AnthropicProvider.js';
 import { geminiFactory } from './providers/GeminiProvider.js';
-import { grokFactory, customOpenAIFactory } from './providers/OpenAICompatibleProvider.js';
+import { customOpenAIFactory } from './providers/OpenAICompatibleProvider.js';
+import { grokFactory } from './providers/GrokProvider.js';
+import { groqFactory } from './providers/GroqProvider.js';
 import { perplexityFactory } from './providers/PerplexityProvider.js';
 
 export function createConfiguredAIRegistry(config: CloudOpsConfig) {
@@ -13,6 +15,7 @@ export function createConfiguredAIRegistry(config: CloudOpsConfig) {
   registry.registerFactory('anthropic', anthropicFactory);
   registry.registerFactory('gemini', geminiFactory);
   registry.registerFactory('xai', grokFactory);
+  registry.registerFactory('groq', groqFactory);
   registry.registerFactory('perplexity', perplexityFactory);
   registry.registerFactory('custom', customOpenAIFactory);
 

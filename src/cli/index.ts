@@ -6,8 +6,38 @@ import ora from 'ora';
 import { VERSION, APP_NAME } from '../index.js';
 import { createAgentService } from '../service/index.js';
 import { getConfiguredProviders, loadConfig } from '../config/index.js';
+import { deployRepository } from '../deploy/index.js';
 
 const program = new Command();
+
+program
+  .command('deploy <repository>')
+  .description('Clone a Git repository and deploy it to Vercel')
+  .option('--preview', 'Create a preview deployment instead of production')
+  .option('--branch <name>', 'Deploy a specific branch')
+  .option('--project <name>', 'Vercel project name')
+  .option('--team <slug>', 'Vercel team slug')
+  .option('--token <token>', 'Vercel token (defaults to VERCEL_TOKEN)')
+  .option('--dry-run', 'Show the deployment command without executing it')
+  .action(async (repository: string, options: Record<string, unknown>) => {
+    const spinner = ora('Deploying repository to Vercel...').start();
+    try {
+      const result = await deployRepository(repository, {
+        production: !options['preview'],
+        branch: options['branch'] as string | undefined,
+        project: options['project'] as string | undefined,
+        team: options['team'] as string | undefined,
+        token: options['token'] as string | undefined,
+        dryRun: options['dryRun'] as boolean,
+      });
+      spinner.succeed(options['dryRun'] ? 'Deployment simulated' : 'Deployment complete');
+      console.log(result.url ? chalk.green(`Live URL: ${result.url}`) : result.output);
+    } catch (error) {
+      spinner.fail('Deployment failed');
+      console.error(chalk.red(error instanceof Error ? error.message : 'Unknown error'));
+      process.exitCode = 1;
+    }
+  });
 
 program
   .name('cloudops')

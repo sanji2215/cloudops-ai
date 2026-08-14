@@ -1,178 +1,175 @@
 # CloudOps AI
 
-AI-powered Cloud/DevOps agent with a provider-agnostic architecture. CloudOps AI understands natural-language requests, plans multi-step workflows, executes authorized cloud CLI operations through a permission system, and verifies results.
+CloudOps AI is a TypeScript command-line DevOps agent. Ask it to inspect cloud infrastructure in plain English, build a safe execution plan, run approved CLI commands, and verify the result. It can also publish a Git repository to Vercel with one command.
+
+## What it does
+
+- Routes requests across OpenAI, Anthropic, Gemini, xAI, Groq, Perplexity, or an OpenAI-compatible model.
+- Inspects AWS, Cloudflare, Vercel, and GitHub through their official command-line tools.
+- Plans work before execution, tracks session/project context, and verifies completed actions.
+- Enforces an allowlist, command risk classification, confirmation policies, dry-run mode, audit logging, and secret redaction.
+- Deploys a GitHub, GitLab, or Bitbucket repository to Vercel and prints its public URL.
 
 ## Architecture
 
-```
-CLI / Web API (future)
-        ↓
-  AgentService
-        ↓
-  Agent (Planner → ModelRouter → Executor → Verifier)
-        ↓
-  ToolManager → Permission System → Command Validator → Command Executor
-        ↓
-  Cloud Tools (AWS, Cloudflare, Vercel, GitHub)
+```text
+CLI
+ └─ AgentService
+     └─ Agent: Planner → ModelRouter → Executor → Verifier
+         └─ ToolManager → permissions → command validator → command executor
+             └─ AWS / Cloudflare / Vercel / GitHub / shell tools
 ```
 
-The agent core is independent of the CLI. The same `AgentService` can power a future web UI via the API layer in `src/service/api.ts`.
+The agent core is independent of the CLI, so it can also power the future HTTP API in `src/service/api.ts`.
 
-## Installation
+## Requirements
 
-**Requirements:** Node.js 20+
+- Node.js 20 or newer
+- At least one AI provider key for natural-language agent commands
+- Optional cloud CLIs for the services you want to inspect (`aws`, `gh`, `vercel`, `wrangler`)
+- Vercel CLI plus either `vercel login` or `VERCEL_TOKEN` to deploy repositories
+
+## Install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/sanji2215/cloudops-ai.git
 cd cloudops-ai
 npm install
 cp .env.example .env
-# Add at least one AI provider API key to .env
+# Add an AI provider key to .env
 npm run build
 ```
 
-## Environment Variables
-
-See `.env.example` for all supported variables. Minimum requirement:
-
-```env
-OPENAI_API_KEY=sk-...
-```
-
-Supported AI providers (configure one or more):
-
-| Provider    | Environment Variable   |
-|-------------|------------------------|
-| OpenAI      | `OPENAI_API_KEY`       |
-| Anthropic   | `ANTHROPIC_API_KEY`    |
-| Gemini      | `GEMINI_API_KEY`       |
-| xAI Grok    | `XAI_API_KEY`          |
-| Perplexity  | `PERPLEXITY_API_KEY`   |
-| Custom      | `CUSTOM_AI_BASE_URL`, `CUSTOM_AI_API_KEY`, `CUSTOM_AI_MODEL` |
-
-## CLI Usage
+Run interactively:
 
 ```bash
-# Interactive mode
 npm start
-# or
-npx cloudops
+# or, during development
+npm run dev
+```
 
-# Single prompt
+## Quick start
+
+```bash
+# Ask the AI agent a question
 cloudops "inspect my AWS infrastructure"
 
-# Plan before executing
+# Generate a plan before any action
 cloudops --plan "diagnose my failing Vercel deployment"
 
-# Dry-run (simulate mutating operations)
+# Simulate mutating actions
 cloudops --dry-run "deploy to production"
 
-# Verbose logging
-cloudops --verbose "list my GitHub repositories"
-
-# Override provider/model
+# Use a particular model
 cloudops --provider anthropic --model claude-sonnet-4-20250514 "analyze my cloud architecture"
 ```
 
-## Supported Tools
+## Deploy a Git repository
 
-| Tool                 | Description                              | Mode       |
-|----------------------|------------------------------------------|------------|
-| `aws_inspect`        | AWS account, S3, EC2, Lambda, IAM, VPC   | Read-only  |
-| `cloudflare_inspect` | Cloudflare account and zones             | Read-only  |
-| `vercel_inspect`     | Vercel projects, deployments, domains    | Read-only  |
-| `github_inspect`     | Repos, PRs, Actions, code search         | Read-only  |
-| `shell_execute`      | Allowlisted CLI commands with validation | Controlled |
+Deploy a supported public or authenticated repository to Vercel:
+
+```bash
+cloudops deploy https://github.com/owner/repository.git
+```
+
+Useful options:
+
+```bash
+# Deploy a branch as a preview deployment
+cloudops deploy https://github.com/owner/repository.git --branch staging --preview
+
+# Deploy into a specific Vercel project and team
+cloudops deploy https://github.com/owner/repository.git --project website --team acme
+
+# Review the exact operation without cloning or deploying
+cloudops deploy https://github.com/owner/repository.git --dry-run
+```
+
+The command accepts GitHub, GitLab, and Bitbucket HTTPS or SSH URLs. It shallow-clones the selected branch to a temporary directory, runs `vercel deploy`, reports the deployment URL, and removes the temporary clone. Vercel detects common web frameworks automatically.
+
+Authenticate once with `vercel login`, or set a token:
+
+```env
+VERCEL_TOKEN=your_vercel_token
+```
 
 ## Configuration
 
-Configuration is loaded from (in order of precedence):
+Settings resolve in this order: CLI flags, environment variables, then `cloudops.config.yaml`.
 
-1. CLI flags
-2. Environment variables
-3. `cloudops.config.yaml` (see included example)
+Configure one or more AI providers in `.env`:
 
-Example routing configuration:
+| Provider | Environment variable |
+| --- | --- |
+| OpenAI | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| Gemini | `GEMINI_API_KEY` |
+| xAI | `XAI_API_KEY` |
+| Groq | `GROQ_API_KEY` |
+| Perplexity | `PERPLEXITY_API_KEY` |
+| Compatible API | `CUSTOM_AI_BASE_URL`, `CUSTOM_AI_API_KEY`, `CUSTOM_AI_MODEL` |
+
+Example model routing:
 
 ```yaml
 routing:
   default:
-    provider: openai
-    model: gpt-4o-mini
+    provider: groq
+    model: openai/gpt-oss-20b
   coding:
     provider: anthropic
   fallback:
     provider: gemini
 ```
 
-## Security Model
+## Tools and safety
 
-- **Command allowlist:** Only approved binaries (`aws`, `gh`, `git`, `vercel`, `wrangler`, etc.)
-- **Command classification:** READ / WRITE / DESTRUCTIVE with independent permission checks
-- **Confirmation prompts:** Destructive and configurable write operations require user approval
-- **Secret redaction:** API keys, tokens, and credentials are redacted from logs and AI context
-- **Dry-run mode:** Mutating operations are simulated, not executed
-- **Audit logging:** Tool calls, commands, confirmations, and verifications are logged
+| Tool | Purpose | Default mode |
+| --- | --- | --- |
+| AWS | Account, S3, EC2, Lambda, IAM, VPC inspection | Read-only |
+| Cloudflare | Account and zone inspection | Read-only |
+| Vercel | Projects, deployments, and domains | Read-only |
+| GitHub | Repositories, PRs, Actions, branches, and code | Read-only |
+| Shell | Allowlisted cloud/DevOps commands | Controlled |
+| Repository deploy | Git clone + Vercel deployment | Write |
 
-The permission system is independent of the AI model. The model cannot bypass safety checks.
+Safety controls are enforced outside the AI model:
+
+- Only approved binaries can run.
+- Commands are classified as read, write, or destructive.
+- Destructive commands and configurable write commands require confirmation.
+- `--dry-run` simulates writes.
+- Credentials are redacted from logs and AI context.
+- Tool calls and commands are audit logged.
 
 ## Development
 
 ```bash
-npm run dev          # Run CLI in dev mode (tsx)
-npm run build        # Compile TypeScript
-npm run test         # Run tests
-npm run test:watch   # Watch mode
-npm run lint         # ESLint
-npm run format       # Prettier
-npm run check        # typecheck + lint + test
+npm run build       # Compile TypeScript
+npm run typecheck   # Type-check without writing output
+npm run lint        # Run ESLint
+npm test            # Run Vitest tests
+npm run check       # Type-check + lint + tests
 ```
 
-## Testing
+## Project layout
 
-62+ unit tests covering:
-
-- Configuration validation
-- AI provider registry and model router with fallback
-- Tool registry, permissions, and confirmation
-- Command validation and secret redaction
-- Cloud provider adapters (mocked execution)
-- Agent state and memory
-- Security hardening
-
-Tests do not require real API credentials or cloud access.
-
-## Project Structure
-
-```
+```text
 src/
-├── agent/       # Agent loop (Planner, Executor, Verifier)
-├── ai/          # Provider abstraction, registry, model router
-├── tools/       # Tool system, permissions, confirmation
-├── shell/       # Command executor and validator
-├── cloud/       # AWS, Cloudflare, Vercel adapters
+├── agent/       # Planning, execution, and verification loop
+├── ai/          # Provider abstraction and model routing
+├── cli/         # Commander command-line interface
+├── cloud/       # AWS, Cloudflare, and Vercel adapters
+├── config/      # Zod-validated settings
+├── deploy/      # Git repository → Vercel deployment workflow
 ├── github/      # GitHub adapter
+├── logging/     # Structured and audit logging
 ├── memory/      # Session and project memory
-├── security/    # Secret redaction
-├── config/      # Zod-validated configuration
-├── logging/     # Structured logging with audit trail
-├── service/     # AgentService + future Web API
-└── cli/         # Commander CLI (interface layer only)
+├── security/    # Secret detection and redaction
+├── service/     # Agent service and future API surface
+├── shell/       # Command execution and validation
+└── tools/       # Registry, permission, and confirmation system
 ```
-
-## Roadmap
-
-- [x] Provider-agnostic AI abstraction with fallback routing
-- [x] Tool system with permissions and confirmation
-- [x] Read-only cloud inspection tools
-- [x] Agent loop with planning and verification
-- [x] CLI with interactive mode, dry-run, and plan mode
-- [x] Session/project memory abstraction
-- [ ] HTTP API server for web UI
-- [ ] Controlled write operations (deploy, PR workflow)
-- [ ] Persistent memory store
-- [ ] Streaming progress in interactive mode
-- [ ] Integration tests with real cloud sandboxes
 
 ## License
 

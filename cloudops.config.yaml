@@ -2,8 +2,8 @@ logLevel: info
 
 routing:
   default:
-    provider: openai
-    model: gpt-4o-mini
+    provider: groq
+    model: openai/gpt-oss-20b
   coding:
     provider: anthropic
     model: claude-sonnet-4-20250514

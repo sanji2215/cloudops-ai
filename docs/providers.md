@@ -8,12 +8,33 @@
 | `anthropic`  | Anthropic   | @anthropic-ai/sdk     | chat, streaming, tools            |
 | `gemini`     | Google      | @google/generative-ai | chat, tools, long context         |
 | `xai`        | xAI Grok    | OpenAI-compatible     | chat, streaming, tools            |
+| `groq`       | Groq        | OpenAI-compatible     | chat, streaming, tools            |
 | `perplexity` | Perplexity  | OpenAI-compatible     | chat, research                      |
 | `custom`     | Custom      | OpenAI-compatible     | configurable base URL             |
 
 ## Configuration
 
 Set the API key environment variable for each provider you want to use. Only configured providers are registered at startup.
+
+To use Grok, create an API key in the xAI console and set it locally (do not commit it):
+
+```env
+XAI_API_KEY=xai-...
+# Optional: defaults to grok-4.5
+XAI_DEFAULT_MODEL=grok-4.5
+```
+
+The Grok provider uses xAI's OpenAI-compatible endpoint at `https://api.x.ai/v1`.
+
+To use Groq, create an API key in the Groq console and set it locally (do not commit it):
+
+```env
+GROQ_API_KEY=gsk_...
+# Optional: defaults to openai/gpt-oss-20b
+GROQ_DEFAULT_MODEL=openai/gpt-oss-20b
+```
+
+The Groq provider uses Groq's OpenAI-compatible endpoint at `https://api.groq.com/openai/v1`.
 
 ## Model Router
 

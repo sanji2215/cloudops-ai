@@ -9,6 +9,7 @@ export const ProviderIdSchema = z.enum([
   'anthropic',
   'gemini',
   'xai',
+  'groq',
   'perplexity',
   'custom',
 ]);

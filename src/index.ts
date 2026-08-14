@@ -26,6 +26,9 @@ export { createAgent } from './agent/index.js';
 export { createAgentService } from './service/index.js';
 export type { AgentOptions, AgentResult } from './agent/index.js';
 
+export { buildVercelDeployArgs, deployRepository, validateGitRepository } from './deploy/index.js';
+export type { DeployOptions, DeployResult } from './deploy/index.js';
+
 export { createSessionMemory, createProjectMemory } from './memory/index.js';
 
 export type {

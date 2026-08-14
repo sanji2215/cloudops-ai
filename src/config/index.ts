@@ -56,6 +56,11 @@ function buildProviderConfig(): CloudOpsConfig['providers'] {
       defaultBaseUrl: 'https://api.x.ai/v1',
       modelEnv: 'XAI_DEFAULT_MODEL',
     },
+    groq: {
+      keyEnv: 'GROQ_API_KEY',
+      defaultBaseUrl: 'https://api.groq.com/openai/v1',
+      modelEnv: 'GROQ_DEFAULT_MODEL',
+    },
     perplexity: {
       keyEnv: 'PERPLEXITY_API_KEY',
       defaultBaseUrl: 'https://api.perplexity.ai',
@@ -91,7 +96,7 @@ function mergeConfig(
 ): CloudOpsConfig {
   const defaultProvider = (overrides.defaultProvider ??
     readEnv('CLOUDOPS_DEFAULT_PROVIDER') ??
-    'openai') as CloudOpsConfig['routing']['default']['provider'];
+    'groq') as CloudOpsConfig['routing']['default']['provider'];
 
   const fileRouting =
     typeof fileConfig['routing'] === 'object' && fileConfig['routing'] !== null
